@@ -10,8 +10,12 @@ import math
 from scipy import sparse
 import matplotlib as mpl
 from scipy.stats import pearsonr
-import pandas as pd
+#import pandas as pd
 import ripser
+
+_gudhi_matplotlib_use_tex = True
+
+label_fontsize=16
 
 ## calculating persistence features and diagram
 def ComputePersistenceDiagram(ps,moment,dimension,complex="alpha",robotsSelected="all"):
@@ -167,9 +171,9 @@ def plotPointCloudMoment(ps,time,length,width,types,robotVision=None,vision_radi
         plt.ylim([-width*0.2,width*1.2])
         plt.axhline(y=0, color='black')
         plt.axhline(y=width, color='black')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title(f'Point cloud in time: {time}')
+    plt.xlabel('Coordinate X', fontsize=label_fontsize)
+    plt.ylabel('Coordinate Y', fontsize=label_fontsize)
+    plt.title(f'Robot point cloud in time: {time}', fontsize=label_fontsize)
     plt.legend(handles=scatter_handles)
     
 def plotPointCloud2Moments(ps,time1,time2,length,width):
@@ -252,14 +256,203 @@ def plotPersistenceDiagram(ps,moment,dimension):
     gd.plot_persistence_diagram(persistence)
     plt.title(f"Persistent diagram for time {moment}")
 
-def plotPersistenceBarcode(ps,moment,dimension):
+def plotPersistenceBarcode(ps,moment,dimension, showMoment=False):
     maximumFiltration = [float(np.max(distance_matrix(X,X))) for X in ps[:,:,:2]]
     persistence = ComputePersistenceDiagram(ps,moment,dimension,"rips")
     persistenciaL=limitingDiagram(persistence,maximumFiltration[moment])
     entropy=EntropyCalculationFromBarcode(persistenciaL)
     gd.plot_persistence_barcode(persistenciaL)
-    plt.title(f"Persistent barcode for time {moment}. Entropy: {entropy}")
+    if showMoment:
+        plt.title(f"Persistent barcode for time {moment}. Entropy: {entropy}", fontsize=label_fontsize)
+    else:
+        plt.title(f"Persistent barcode \n Entropy: {entropy}", fontsize=label_fontsize)
+    plt.xlabel("Birth-Death Interval", fontsize=label_fontsize)
+    plt.ylabel("Index", fontsize=label_fontsize)
+
+def plotPersistenceBarcodeM(ps,moment,dimension, showMoment=False):
+    maximumFiltration = [float(np.max(distance_matrix(X,X))) for X in ps[:,:,:2]]
+    persistence = ComputePersistenceDiagram(ps,moment,dimension,"rips")
+    persistenciaL=limitingDiagram(persistence,maximumFiltration[moment])
+    entropy=EntropyCalculationFromBarcode(persistenciaL)
+    plot_persistence_barcode(persistenciaL)
+    if showMoment:
+        plt.title(f"Persistent barcode for time {moment}. Entropy: {entropy}", fontsize=label_fontsize)
+    else:
+        plt.title(f"Persistent barcode \n Entropy: {entropy}", fontsize=label_fontsize)
+    plt.xlabel("Birth-Death Interval", fontsize=label_fontsize)
+    plt.ylabel("Index", fontsize=label_fontsize)
+
+from functools import lru_cache
+import warnings
+import errno
+import os
+import shutil
+
+def _min_birth_max_death(persistence, band=0.0):
+    """This function returns (min_birth, max_death) from the persistence.
+
+    :param persistence: The persistence to plot.
+    :type persistence: list of tuples(dimension, tuple(birth, death)).
+    :param band: band
+    :type band: float.
+    :returns: (float, float) -- (min_birth, max_death).
+    """
+    # Look for minimum birth date and maximum death date for plot optimisation
+    max_death = 0
+    min_birth = persistence[0][1][0]
+    for interval in reversed(persistence):
+        if float(interval[1][1]) != float("inf"):
+            if float(interval[1][1]) > max_death:
+                max_death = float(interval[1][1])
+        if float(interval[1][0]) > max_death:
+            max_death = float(interval[1][0])
+        if float(interval[1][0]) < min_birth:
+            min_birth = float(interval[1][0])
+    if band > 0.0:
+        max_death += band
+    # can happen if only points at inf death
+    if min_birth == max_death:
+        max_death = max_death + 1.0
+    return (min_birth, max_death)
     
+def _array_handler(a):
+    """
+    :param a: if array, assumes it is a (n x 2) np.array and returns a
+                persistence-compatible list (padding with 0), so that the
+                plot can be performed seamlessly.
+    :returns: * List[dimension, [birth, death]] Persistence, compatible with plot functions, list.
+              * boolean Modification status (True if output is different from input)
+    """
+    if isinstance(a[0][1], (np.floating, float)):
+        return [[0, x] for x in a], True
+    else:
+        return a, False
+
+def _limit_to_max_intervals(persistence, max_intervals, key):
+    """This function returns truncated persistence if length is bigger than max_intervals.
+    :param persistence: Persistence intervals values list. Can be grouped by dimension or not.
+    :type persistence: an array of (dimension, (birth, death)) or an array of (birth, death).
+    :param max_intervals: maximal number of intervals to display.
+        Selected intervals are those with the longest life time. Set it
+        to 0 to see all. Default value is 1000.
+    :type max_intervals: int.
+    :param key: key function for sort algorithm.
+    :type key: function or lambda.
+    """
+    if max_intervals > 0 and max_intervals < len(persistence):
+        warnings.warn(
+            "There are %s intervals given as input, whereas max_intervals is set to %s."
+            % (len(persistence), max_intervals)
+        )
+        # Sort by life time, then takes only the max_intervals elements
+        return sorted(persistence, key=key, reverse=True)[:max_intervals]
+    else:
+        return persistence
+        
+@lru_cache(maxsize=1)
+def _matplotlib_can_use_tex() -> bool:
+    """This function returns True if matplotlib can deal with LaTeX, False otherwise.
+    The returned value is cached.
+
+    This code is taken
+    https://github.com/matplotlib/matplotlib/blob/f975291a008f001047ad8964b15d7d64d2907f1e/lib/matplotlib/__init__.py#L454-L471
+    deprecated from matplotlib 3.6 and removed in matplotlib 3.8.0
+    """
+    from matplotlib import _get_executable_info, ExecutableNotFoundError
+
+    if not shutil.which("tex"):
+        warnings.warn("usetex mode requires TeX.")
+        return False
+    try:
+        _get_executable_info("dvipng")
+    except ExecutableNotFoundError:
+        warnings.warn("usetex mode requires dvipng.")
+        return False
+    try:
+        _get_executable_info("gs")
+    except ExecutableNotFoundError:
+        warnings.warn("usetex mode requires ghostscript.")
+        return False
+    return True
+    
+def plot_persistence_barcode(
+    persistence=[],
+    persistence_file="",
+    alpha=0.6,
+    max_intervals=20000,
+    inf_delta=0.1,
+    legend=None,
+    colormap=None,
+    fontsize=16,
+):
+    """Adapted to generate a simple plot without subplots, just a single plot."""
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+
+    if _gudhi_matplotlib_use_tex and _matplotlib_can_use_tex():
+        plt.rc("text", usetex=True)
+        plt.rc("font", family="serif")
+    else:
+        plt.rc("text", usetex=False)
+        plt.rc("font", family="DejaVu Sans")
+
+    nx2_array = False
+    if persistence_file != "":
+        if path.isfile(persistence_file):
+            persistence = []
+            diag = read_persistence_intervals_grouped_by_dimension(persistence_file=persistence_file)
+            for key in diag.keys():
+                for persistence_interval in diag[key]:
+                    persistence.append((key, persistence_interval))
+        else:
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), persistence_file)
+
+    try:
+        persistence, nx2_array = _array_handler(persistence)
+        persistence = _limit_to_max_intervals(
+            persistence, max_intervals, key=lambda life_time: life_time[1][1] - life_time[1][0]
+        )
+        (min_birth, max_death) = _min_birth_max_death(persistence)
+        persistence = sorted(persistence, key=lambda birth: birth[1][0])
+    except IndexError:
+        min_birth, max_death = 0.0, 1.0
+        pass
+
+    delta = (max_death - min_birth) * inf_delta
+    infinity = max_death + delta
+    axis_start = min_birth - delta
+
+    # Crear la figura y el gráfico directamente, sin subgráficos ni ejes adicionales
+    plt.figure(figsize=(8, 8))  # Crear una figura nueva
+
+    if colormap is None:
+        colormap = plt.cm.Set1.colors
+
+    x = [birth for (dim, (birth, death)) in persistence]
+    y = [(death - birth) if death != float("inf") else (infinity - birth) for (dim, (birth, death)) in persistence]
+    c = [colormap[dim] for (dim, (birth, death)) in persistence]
+
+    plt.barh(range(len(x)), y, left=x, alpha=alpha, color=c, linewidth=0)
+
+    if legend is None and not nx2_array:
+        legend = True
+
+    if legend:
+        dimensions = {item[0] for item in persistence}
+        plt.legend(
+            handles=[mpatches.Patch(color=colormap[dim], label=str(dim)) for dim in dimensions],
+            loc="best",
+        )
+
+    plt.title("Persistence barcode", fontsize=fontsize)
+    plt.yticks([])  # Eliminar marcas en el eje y
+    plt.gca().invert_yaxis()  # Invertir el eje y
+
+    if len(x) != 0:
+        plt.xlim((axis_start, infinity))  # Definir los límites del eje x
+
+    
+
 
 def plotEntropyTimeSerie(entropy):
     plt.plot(entropy)
