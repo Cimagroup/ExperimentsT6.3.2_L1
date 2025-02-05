@@ -10,7 +10,7 @@ This repository contains data and experiments associated to "D6.3. Topology-base
 - **TrajectoryAnalysis Folder**: It contains experiments analyzing robot trajectories and their relation with collisions.
 - **Two_or_more_type_agents**: It contains a simulation example with two type of agents.
 - **function.py**: Contains some functions that are useful and will be used in the rest of files.
-- 
+  
 ## Usage
 1) Clone this repository and create a virtual enviromment:
 
@@ -48,7 +48,6 @@ Ok, you can now run experiments! :)
 
 4. wsl --set-default-version 2
 
-5. 
 ## Citation  and reference
 
 If you want to use our code for your experiments or for analyzing it, please cite our paper as follows:
