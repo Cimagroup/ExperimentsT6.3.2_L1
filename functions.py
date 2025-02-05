@@ -10,7 +10,7 @@ import math
 from scipy import sparse
 import matplotlib as mpl
 from scipy.stats import pearsonr
-#import pandas as pd
+import pandas as pd
 import ripser
 
 _gudhi_matplotlib_use_tex = True
@@ -166,6 +166,10 @@ def plotPointCloudMoment(ps,time,length,width,types,robotVision=None,vision_radi
     if length==width:
         plt.xlim(-length/1.5, length/1.5)
         plt.ylim(-width/1.5, width/1.5)
+        # plt.axhline(y=-length/2, color='black')
+        # plt.axhline(y=length/2, color='black')
+        # plt.axvline(x=-width/2, color='black')
+        # plt.axvline(x=width/2, color='black')
     else:
         plt.xlim([-length*0.2,length*1.2])
         plt.ylim([-width*0.2,width*1.2])

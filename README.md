@@ -1,29 +1,60 @@
-1) Instalación de navground en wsl. 
+# Experiments T6.3.2 - D6.3. Topology-based optimization of robot fleet behavior. Detection of stable topological patterns using persistent entropy
+
+This repository contains data and experiments associated to "D6.3. Topology-based optimization of robot fleet behavior" performed for the European Project REXASI-PRO (REliable & eXplainable Swarm Intelligence for People with Reduced mObility) (HORIZON-CL4-HUMAN-01 programme under grant agreement nº101070028), in concrete to subtask 6.3.2 and line 1. It has been created by the CIMAgroup research team at the University of Seville, Spain.
+
+## Repository structure
+
+- **ExploratoryAnalysisWithouTopology Folder**: It contains an exploratory analysis for behavior comparation.
+- **RealScenarios Folder**: It contains a realistic simulation environment for different scenarios: Cross and corridor.
+- **T6-3-2-Experiments Folder**: It contains the experiments that have developed for the specific purpose. It contains a folder for **Cross Scenario** and another one for **Corridor Scenario**. Each of them contains different notebooks, for different behaviors, comparing them, and for predicting collisions. In this folder, it is also a folder called **IlustrationDeliverable**, where images for the deliverable have been created.
+- **TrajectoryAnalysis Folder**: It contains experiments analyzing robot trajectories and their relation with collisions.
+- **Two_or_more_type_agents**: It contains a simulation example with two type of agents.
+- **function.py**: Contains some functions that are useful and will be used in the rest of files.
+- 
+## Usage
+1) Clone this repository and create a virtual enviromment:
 
 ```bash
-sudo apt install -y build-essential cmake git python3-dev python3-pip
-python3 -m venv <path_to_the_venv>
-. <path_to_the_venv>/bin/activate
+python3 -m venv entorno python=3.10.12
+```
+
+2) Activate the virtual enviromment:
+
+```bash
+source entorno/bin/activate
+```
+
+3) Install Navground (we have used version 0.3.3, so using other version may vary or produces error):
+
+```bash
 pip install navground[all]
 ```
 
-2) Para usar navground, abrir esta carpeta(la carpeta base donde hayais hecho todos los pasos anteriores) en el cmd, poner wsl. 
+4) Install the necessary dependencies:
 
-	1. Activar el entorno virtual para ello: source entorno/bin/activate (como se llame tu entorno)
+```bash
+pip install jupyter notebook matplotlib scipy multiprocess gudhi plotly scikit-learn pandas ripser seaborn tqdm
+```
 
-	2. Instalar  librerías necesarias para poder ejecutar los notebooks: pip install jupyter notebook matplotlib scipy multiprocess gudhi plotly scikit-learn pandas (no es necesario instalar cairosvg websockets y moviepy, ya que se instalan con navground)
+Ok, you can now run experiments! :)
 
-	3. Abrir jupyter notebook, puedes seguir de ejemplo el archivo CorridorScenario.ipynb o el archivo CrossScenario. El tour.ipynb es 	otro archivo tutorial, lo puedes descargar la página de navground. 
+**Note:** In case of issues doing that in WSL, reinstall using the following distribution and reinstall Navground with the steps mentioned earlier:
 
-	**Si da problema cairo durante la ejecución del notebook: sudo apt install cairo2**
+1. Remove the entire Ubuntu distribution: wsl --unregister distribution
 
-En caso de problemas con wsl, reinstalar con la siguiente distribución y volver a instalar navground con los pasos indicados anteriormente:
+2. Install the WSL distribution: wsl --install -d Ubuntu-22.04
 
-1) Eliminar distribucion ubuntu completa wsl --unregister distribution
+3. sudo apt-get update
 
-2) Instalar distribucion wsl --install -d Ubuntu-22.04
+4. wsl --set-default-version 2
 
-3) sudo apt-get update
+5. 
+## Citation  and reference
 
-4) wsl --set-default-version 2
+If you want to use our code for your experiments or for analyzing it, please cite our paper as follows:
+
+Toscano-Duran V, Perera-Lago J, Torras-Casas A, Gonzalez-Diaz, R. An in-depth topology analysis and optimization of robot fleet behavior. Open Research Europe (Submitted, pending of acceptance and publication)
+
+For further information, please contact us at: vtoscano@us.es
+
 
