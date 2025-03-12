@@ -48,12 +48,5 @@ Ok, you can now run experiments! :)
 
 4. wsl --set-default-version 2
 
-## Citation  and reference
-
-If you want to use our code for your experiments or for analyzing it, please cite our paper as follows:
-
-Toscano-Duran V, Perera-Lago J, Torras-Casas A, Gonzalez-Diaz, R. An in-depth topology analysis and optimization of robot fleet behavior. Open Research Europe (Submitted, pending of acceptance and publication)
-
-For further information, please contact us at: vtoscano@us.es
 
 
